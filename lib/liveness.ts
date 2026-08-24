@@ -30,16 +30,16 @@ export interface BlinkDetectionOptions {
 
 /**
  * Samples eye-aspect-ratio over a short window and looks for a clear dip,
- * which is what a real blink produces. The 0.15 delta threshold is a
- * starting point from CONTEXT.md — Phase 2 calibration should confirm it
- * catches a real blink reliably and doesn't false-trigger on normal head
- * movement without an actual blink.
+ * which is what a real blink produces. The 0.06 delta threshold is
+ * calibrated for face-api.js's TinyFaceDetector + 68-point landmarks,
+ * where the raw EAR range per blink is typically 0.06–0.12.
+ * Adjust if you switch to a higher-resolution detector.
  */
 export async function detectBlink(
   videoElement: HTMLVideoElement,
   options: BlinkDetectionOptions = {}
 ): Promise<boolean> {
-  const { durationMs = 2500, onSample, signal } = options;
+  const { durationMs = 4000, onSample, signal } = options;
   const readings: number[] = [];
   const start = Date.now();
 
@@ -56,12 +56,12 @@ export async function detectBlink(
       onSample?.(leftEAR);
     }
 
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 60));
   }
 
   if (readings.length < 3) return false; // not enough samples to trust a result
 
   const min = Math.min(...readings);
   const max = Math.max(...readings);
-  return max - min > 0.15;
+  return max - min > 0.06;
 }

@@ -185,9 +185,9 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
 
           const controller = new AbortController();
           const passed = await detectBlink(video, {
-            durationMs: 2500,
+            durationMs: 4000,
             signal: controller.signal,
-            onSample: () => setLivenessProgress((p) => Math.min(100, p + 4)),
+            onSample: () => setLivenessProgress((p) => Math.min(100, p + 1.5)),
           });
 
           if (cancelled) return;
