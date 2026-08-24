@@ -48,16 +48,25 @@ export function FaceRegistrationFlow() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      // Don't try to attach to videoRef here — the <video> element for the
+      // "ready" step hasn't mounted yet at this point in the function (it's
+      // conditionally rendered below, gated on `step`). Flip the step and
+      // let the effect below attach the stream once the element exists.
       setStep("ready");
     } catch {
       setErrorMsg("Camera access was denied. Enable camera permission in your browser settings to register your face.");
       setStep("error");
     }
   }, []);
+
+  // Attaches the already-granted stream to the video element as soon as it
+  // mounts (whenever `step` moves into a state that renders the <video> tag).
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [step]);
 
   useEffect(() => {
     return () => {

@@ -66,10 +66,9 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
           return;
         }
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
+        // Don't attach to videoRef here — the <video> element only renders
+        // once `flow` leaves "loading", so it hasn't mounted yet at this
+        // point. The effect below attaches it as soon as it does.
         setFlow("watching");
       } catch {
         setFlow("camera-error");
@@ -81,6 +80,15 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
+
+  // Attaches the already-granted stream to the video element as soon as it
+  // mounts (whenever `flow` moves into a state that renders the <video> tag).
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [flow]);
 
   const resetForNext = useCallback(() => {
     setResult(null);
