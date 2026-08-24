@@ -1,0 +1,7 @@
+{
+  "//": "AttendAI is Firestore-only per CONTEXT.md Section 1 — Realtime Database is not used anywhere in this app's data model. However, every new Firebase project provisions a Realtime Database instance by default, and its DEFAULT rules are wide open ({ \".read\": true, \".write\": true }). An open, unused RTDB instance is exactly the kind of exposed surface the Anti-Vibe security rules warn about (Section 11: never leave permissive database rules in production). This file locks it down completely so it can't be silently abused even though the app never calls it.",
+  "rules": {
+    ".read": false,
+    ".write": false
+  }
+}

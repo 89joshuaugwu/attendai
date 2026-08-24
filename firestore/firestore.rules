@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function getRole() {
+      return request.auth != null
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && getRole() in ["lecturer", "admin"];
+      allow write: if getRole() == "admin" || (request.auth.uid == uid &&
+        request.resource.data.role == resource.data.role);
+    }
+
+    match /courses/{courseId} {
+      allow read: if request.auth != null;
+      allow write: if getRole() == "admin";
+    }
+
+    match /attendanceSessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow write: if getRole() in ["lecturer", "admin"];
+
+      match /records/{uid} {
+        allow read: if request.auth != null && (
+          request.auth.uid == uid || getRole() in ["lecturer", "admin"]
+        );
+        allow write: if false;
+        // ALL record writes go through /api/attendance/[sessionId]/identify
+        // and the manual-override endpoint, using firebase-admin — never
+        // direct client writes. The client must never be able to
+        // unilaterally claim an identity match. See lib/attendance.ts.
+      }
+    }
+  }
+}
