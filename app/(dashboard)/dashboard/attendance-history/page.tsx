@@ -29,12 +29,20 @@ export default function AttendanceHistoryPage() {
     let cancelled = false;
 
     (async () => {
-      // collectionGroup query across every session's /records subcollection.
-      // Firestore rules allow reading a /records/{uid} doc only if
-      // request.auth.uid === uid (or the reader is lecturer/admin), so this
-      // naturally returns only this student's own records.
-      const recordsSnap = await getDocs(collectionGroup(db, "records"));
-      const relevant = recordsSnap.docs.filter((d) => d.id === profile.uid);
+      // collectionGroup query across every session's /records subcollection,
+      // filtered to this student's own docs via the studentUid field.
+      //
+      // NOTE: Firestore validates a `list` query against its entire possible
+      // result set, not the documents that actually come back — a query
+      // with no matching `where` clause gets rejected outright for any rule
+      // that depends on document data (like "doc ID == my uid"), even
+      // though client-side filtering afterward would've been correct in
+      // practice. The query must filter on a real field, and the security
+      // rule must reference that same field. See firestore.rules.
+      const recordsSnap = await getDocs(
+        query(collectionGroup(db, "records"), where("studentUid", "==", profile.uid))
+      );
+      const relevant = recordsSnap.docs;
       if (relevant.length === 0) {
         if (!cancelled) {
           setEntries([]);

@@ -26,13 +26,27 @@ service cloud.firestore {
 
       match /records/{uid} {
         allow read: if request.auth != null && (
-          request.auth.uid == uid || getRole() in ["lecturer", "admin"]
+          request.auth.uid == uid ||
+          resource.data.studentUid == request.auth.uid ||
+          getRole() in ["lecturer", "admin"]
         );
         allow write: if false;
         // ALL record writes go through /api/attendance/[sessionId]/identify
         // and the manual-override endpoint, using firebase-admin — never
         // direct client writes. The client must never be able to
         // unilaterally claim an identity match. See lib/attendance.ts.
+        //
+        // Two read conditions cover two different query shapes:
+        //  - request.auth.uid == uid: single-doc get() by known path,
+        //    e.g. AttendanceRecordsView reading a specific session's records.
+        //  - resource.data.studentUid == request.auth.uid: needed for the
+        //    collectionGroup("records") query on the student's own
+        //    attendance-history page. Firestore validates `list` queries
+        //    against the whole possible result set, not the docs actually
+        //    returned — a rule based only on document ID can't be proven
+        //    safe for an unfiltered collectionGroup query, so the query
+        //    must filter with `where("studentUid", "==", uid)` AND the rule
+        //    must reference that same field for Firestore to allow it.
       }
     }
   }

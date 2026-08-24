@@ -37,6 +37,7 @@ export type AttendanceMethod = "recognized" | "manual_override";
 
 export interface AttendanceRecord {
   uid: string;
+  studentUid?: string; // duplicate of the doc ID (uid); lets collectionGroup queries filter with a `where` clause that Firestore rules can validate
   studentName?: string;
   markedAt: number;
   confidence: number | null; // distance score, lower = better match; null for manual

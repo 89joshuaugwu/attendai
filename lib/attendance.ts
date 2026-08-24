@@ -73,6 +73,11 @@ export async function markAttendance(
 
   await recordRef.set(
     {
+      studentUid: uid, // duplicated from the doc ID so collectionGroup
+      // queries can filter on it directly — Firestore rules can't validate
+      // an unfiltered list query against a per-document condition like
+      // "doc ID == request.auth.uid"; it needs a matching `where` clause
+      // on an actual field. See firestore.rules and attendance-history/page.tsx.
       markedAt: Date.now(),
       confidence: distance,
       method,
