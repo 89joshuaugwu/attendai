@@ -75,33 +75,36 @@ export async function detectBlink(
       const noseTip = nose[3] ?? nose[0];
       nosePositions.push({ x: noseTip.x, y: noseTip.y });
       faceWidth = detection.detection.box.width;
+
+      // --- Check 1: Blink (EAR dip) ---
+      if (earReadings.length >= 3) {
+        const minEAR = Math.min(...earReadings);
+        const maxEAR = Math.max(...earReadings);
+        if (maxEAR - minEAR > 0.03) {
+          return true; // Blink detected!
+        }
+      }
+
+      // --- Check 2: Head motion (nose displacement) ---
+      if (nosePositions.length >= 3 && faceWidth > 0) {
+        const first = nosePositions[0];
+        let maxDisplacement = 0;
+        for (let i = 1; i < nosePositions.length; i++) {
+          const dx = nosePositions[i].x - first.x;
+          const dy = nosePositions[i].y - first.y;
+          const displacement = Math.hypot(dx, dy);
+          if (displacement > maxDisplacement) maxDisplacement = displacement;
+        }
+        // If the nose moved more than 3% of the face width, it's live
+        if (maxDisplacement > faceWidth * 0.03) {
+          return true; // Motion detected!
+        }
+      }
     }
 
     await new Promise((r) => setTimeout(r, 50));
   }
 
-  if (earReadings.length < 3) return false;
-
-  // --- Check 1: Blink (EAR dip) ---
-  const minEAR = Math.min(...earReadings);
-  const maxEAR = Math.max(...earReadings);
-  const blinkDetected = maxEAR - minEAR > 0.03;
-
-  // --- Check 2: Head motion (nose displacement) ---
-  let motionDetected = false;
-  if (nosePositions.length >= 3 && faceWidth > 0) {
-    // Compare each nose position to the first to find max displacement
-    const first = nosePositions[0];
-    let maxDisplacement = 0;
-    for (let i = 1; i < nosePositions.length; i++) {
-      const dx = nosePositions[i].x - first.x;
-      const dy = nosePositions[i].y - first.y;
-      const displacement = Math.hypot(dx, dy);
-      if (displacement > maxDisplacement) maxDisplacement = displacement;
-    }
-    // If the nose moved more than 3% of the face width, it's live
-    motionDetected = maxDisplacement > faceWidth * 0.03;
-  }
-
-  return blinkDetected || motionDetected;
+  // If the time window expires without detecting a blink or motion
+  return false;
 }
