@@ -1,6 +1,6 @@
 {
-  "name": "AttendAI",
-  "short_name": "AttendAI",
+  "name": "RollCall",
+  "short_name": "RollCall",
   "description": "Facial recognition attendance for enrolled students.",
   "icons": [
     { "src": "/favicon-16x16.png", "sizes": "16x16", "type": "image/png" },

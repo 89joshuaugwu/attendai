@@ -70,8 +70,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="AttendAI logo" width={32} height={32} className="rounded-md" />
-            <span className="font-display text-lg font-semibold text-text-primary">AttendAI</span>
+            <Image src="/logo.png" alt="RollCall logo" width={32} height={32} className="rounded-md" />
+            <span className="font-display text-lg font-semibold text-text-primary">RollCall</span>
           </Link>
         </div>
         <div className="flex items-center gap-3">

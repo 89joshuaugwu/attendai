@@ -40,6 +40,7 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
   const streamRef = useRef<MediaStream | null>(null);
   const pausedRef = useRef(false);
   const busyRef = useRef(false); // guards against overlapping detection loops
+  const flowRef = useRef<FlowState>("loading");
 
   const [flow, setFlow] = useState<FlowState>("loading");
   const [paused, setPaused] = useState(false);
@@ -52,6 +53,10 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
+
+  useEffect(() => {
+    flowRef.current = flow;
+  }, [flow]);
 
   // Bootstrap models + camera
   useEffect(() => {
@@ -150,14 +155,14 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
     resetForNext();
   };
 
-  // Main detection loop
+  // Keep this loop alive while flow changes. Previously setting "liveness"
+  // re-ran this effect and cancelled the check that had just begun.
   useEffect(() => {
-    if (flow !== "watching") return;
     let cancelled = false;
 
     const loop = async () => {
       while (!cancelled) {
-        if (pausedRef.current || busyRef.current) {
+        if (pausedRef.current || busyRef.current || flowRef.current !== "watching") {
           await new Promise((r) => setTimeout(r, 200));
           continue;
         }
@@ -185,9 +190,9 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
 
           const controller = new AbortController();
           const passed = await detectBlink(video, {
-            durationMs: 4000,
+            durationMs: 6000,
             signal: controller.signal,
-            onSample: () => setLivenessProgress((p) => Math.min(100, p + 1.5)),
+            onSample: () => setLivenessProgress((p) => Math.min(100, p + 2.5)),
           });
 
           if (cancelled) return;
@@ -220,7 +225,7 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
     return () => {
       cancelled = true;
     };
-  }, [flow, resetForNext, runIdentification]);
+  }, [resetForNext, runIdentification]);
 
   if (flow === "loading") {
     return (

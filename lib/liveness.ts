@@ -28,6 +28,12 @@ export interface BlinkDetectionOptions {
   signal?: AbortSignal;
 }
 
+const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+  // Smaller input is quicker on laptops, so natural blinks are sampled.
+  inputSize: 320,
+  scoreThreshold: 0.4,
+});
+
 /**
  * Detects liveness through two complementary signals:
  *
@@ -46,9 +52,10 @@ export async function detectBlink(
   videoElement: HTMLVideoElement,
   options: BlinkDetectionOptions = {}
 ): Promise<boolean> {
-  const { durationMs = 4000, onSample, signal } = options;
+  const { durationMs = 6000, onSample, signal } = options;
   const earReadings: number[] = [];
   const nosePositions: { x: number; y: number }[] = [];
+  let initialFace: { x: number; y: number; width: number; height: number } | null = null;
   let faceWidth = 0;
   const start = Date.now();
 
@@ -56,7 +63,7 @@ export async function detectBlink(
     if (signal?.aborted) return false;
 
     const detection = await faceapi
-      .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions())
+      .detectSingleFace(videoElement, detectorOptions)
       .withFaceLandmarks();
 
     if (detection) {
@@ -75,12 +82,18 @@ export async function detectBlink(
       const noseTip = nose[3] ?? nose[0];
       nosePositions.push({ x: noseTip.x, y: noseTip.y });
       faceWidth = detection.detection.box.width;
+      initialFace ??= {
+        x: detection.detection.box.x,
+        y: detection.detection.box.y,
+        width: detection.detection.box.width,
+        height: detection.detection.box.height,
+      };
 
       // --- Check 1: Blink (EAR dip) ---
       if (earReadings.length >= 3) {
         const minEAR = Math.min(...earReadings);
         const maxEAR = Math.max(...earReadings);
-        if (maxEAR - minEAR > 0.03) {
+        if (maxEAR - minEAR > 0.02) {
           return true; // Blink detected!
         }
       }
@@ -95,10 +108,22 @@ export async function detectBlink(
           const displacement = Math.hypot(dx, dy);
           if (displacement > maxDisplacement) maxDisplacement = displacement;
         }
-        // If the nose moved more than 3% of the face width, it's live
-        if (maxDisplacement > faceWidth * 0.03) {
+        // A slight turn or lean is easier to perform than a timed blink.
+        if (maxDisplacement > faceWidth * 0.018) {
           return true; // Motion detected!
         }
+      }
+
+      // A nod changes the detected face's position and size even where the
+      // nose remains centered relative to the face bounding box.
+      if (initialFace) {
+        const current = detection.detection.box;
+        const centerShift = Math.hypot(
+          current.x + current.width / 2 - (initialFace.x + initialFace.width / 2),
+          current.y + current.height / 2 - (initialFace.y + initialFace.height / 2)
+        );
+        const scaleChange = Math.abs(current.height - initialFace.height);
+        if (centerShift > initialFace.width * 0.018 || scaleChange > initialFace.height * 0.025) return true;
       }
     }
 

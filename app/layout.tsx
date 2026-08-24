@@ -27,11 +27,11 @@ const monoFont = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AttendAI — Facial Recognition Attendance",
-    template: "%s · AttendAI",
+    default: "RollCall — Facial Recognition Attendance",
+    template: "%s · RollCall",
   },
   description:
-    "AttendAI identifies enrolled students automatically against a registered roster — no QR codes, no manual roll call.",
+    "RollCall identifies enrolled students against a registered roster — no QR codes, no manual roll call.",
   icons: {
     icon: [{ url: "/logo.png", type: "image/png" }],
     shortcut: ["/logo.png"],

@@ -23,9 +23,9 @@ export function CaptureShell({ children, courseLabel, backHref, headerRight }: C
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <Image src="/logo.png" alt="AttendAI logo" width={28} height={28} className="rounded-md" />
+          <Image src="/logo.png" alt="RollCall logo" width={28} height={28} className="rounded-md" />
           <div>
-            <p className="font-display text-sm font-semibold text-white">AttendAI</p>
+            <p className="font-display text-sm font-semibold text-white">RollCall</p>
             <p className="text-xs text-slate-400">{courseLabel}</p>
           </div>
         </div>

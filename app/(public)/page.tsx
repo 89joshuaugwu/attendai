@@ -7,8 +7,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-bg">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
-          <Image src="/logo.png" alt="AttendAI logo" width={36} height={36} className="rounded-lg" />
-          <span className="font-display text-xl font-semibold text-text-primary">AttendAI</span>
+          <Image src="/logo.png" alt="RollCall logo" width={36} height={36} className="rounded-lg" />
+          <span className="font-display text-xl font-semibold text-text-primary">RollCall</span>
         </div>
         <Link
           href="/auth/login"
@@ -41,7 +41,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-sm">
-            <Image src="/logo.png" alt="AttendAI facial recognition illustration" width={480} height={480} priority className="w-full" />
+            <Image src="/logo.png" alt="RollCall facial recognition illustration" width={480} height={480} priority className="w-full" />
           </div>
         </section>
 
@@ -65,7 +65,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-border py-8 text-center text-sm text-text-secondary">
-        © {new Date().getFullYear()} AttendAI. Built for enrolled students, lecturers, and admins only — no public signup.
+        © {new Date().getFullYear()} RollCall. Built for enrolled students, lecturers, and admins only — no public signup.
       </footer>
     </div>
   );

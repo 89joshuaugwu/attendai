@@ -36,8 +36,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <Image src="/logo.png" alt="AttendAI logo" width={56} height={56} className="rounded-2xl" />
-          <h1 className="mt-4 font-display text-2xl font-semibold text-text-primary">Sign in to AttendAI</h1>
+          <Image src="/logo.png" alt="RollCall logo" width={56} height={56} className="rounded-2xl" />
+          <h1 className="mt-4 font-display text-2xl font-semibold text-text-primary">Sign in to RollCall</h1>
           <p className="mt-1 text-sm text-text-secondary">
             Accounts are provisioned by your admin — there&apos;s no public signup.
           </p>
