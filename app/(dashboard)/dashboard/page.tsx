@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ScanFace, History, Users, BookOpen, BarChart3, ArrowRight } from "lucide-react";
+import { ScanFace, History, Users, BookOpen, BarChart3, ArrowRight, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/Card";
 
@@ -33,6 +33,7 @@ export default function DashboardOverviewPage() {
         {profile?.role === "admin" && (
           <>
             <OverviewLink href="/dashboard/admin/lecturers" icon={Users} title="Manage lecturers" desc="Provision lecturer accounts — no public signup." />
+            <OverviewLink href="/dashboard/admin/students" icon={GraduationCap} title="Manage students" desc="Create student accounts before enrolling them into courses." />
             <OverviewLink href="/dashboard/admin/courses" icon={BookOpen} title="Manage courses" desc="Create courses and manage student enrollment." />
           </>
         )}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import type { Role } from "@/types";
 
 // Server-only admin actions: creates lecturer/student accounts (no public
 // signup — see CONTEXT.md Section 5-6) and courses using firebase-admin,
@@ -12,7 +13,8 @@ export async function POST(req: NextRequest) {
   const { action } = body;
 
   try {
-    if (action === "create_lecturer") {
+    if (action === "create_lecturer" || action === "create_student") {
+      const role: Role = action === "create_lecturer" ? "lecturer" : "student";
       const { name, email } = body as { name: string; email: string };
       if (!name || !email) {
         return NextResponse.json({ message: "Name and email are required." }, { status: 400 });
@@ -29,13 +31,15 @@ export async function POST(req: NextRequest) {
         uid: userRecord.uid,
         email,
         displayName: name,
-        role: "lecturer",
+        role,
         faceDescriptor: null,
         createdAt: Date.now(),
       });
 
-      // In production: send tempPassword via Nodemailer/Gmail SMTP instead
-      // of returning it in the response body.
+      // No SMTP wired up yet (see README "Known gaps") — the temp password
+      // is returned here so the admin UI can display it directly for the
+      // admin to relay manually (WhatsApp, in person, etc). Wire up
+      // Nodemailer/Gmail SMTP before onboarding at real scale.
       return NextResponse.json({ uid: userRecord.uid, tempPassword });
     }
 
@@ -57,8 +61,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ message: "Unknown action." }, { status: 400 });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[/api/auth/session]", err);
+    const code = (err as { code?: string })?.code;
+    if (code === "auth/email-already-exists") {
+      return NextResponse.json({ message: "That email is already registered." }, { status: 409 });
+    }
     return NextResponse.json({ message: "Server error." }, { status: 500 });
   }
 }

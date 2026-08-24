@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  GraduationCap,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -38,6 +39,7 @@ const navByRole: Record<string, NavItem[]> = {
   admin: [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/admin/lecturers", label: "Lecturers", icon: Users },
+    { href: "/dashboard/admin/students", label: "Students", icon: GraduationCap },
     { href: "/dashboard/admin/courses", label: "Courses", icon: BookOpen },
   ],
 };

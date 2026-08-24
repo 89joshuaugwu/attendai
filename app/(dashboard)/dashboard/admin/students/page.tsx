@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";
-import { UserPlus, Mail } from "lucide-react";
+import { UserPlus, GraduationCap } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { AppUser } from "@/types";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -12,8 +12,8 @@ import { TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
 import { CredentialReveal } from "@/components/molecules/CredentialReveal";
 
-export default function AdminLecturersPage() {
-  const [lecturers, setLecturers] = useState<AppUser[]>([]);
+export default function AdminStudentsPage() {
+  const [students, setStudents] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -22,9 +22,13 @@ export default function AdminLecturersPage() {
   const [newCredential, setNewCredential] = useState<{ email: string; tempPassword: string } | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "users"), where("role", "==", "lecturer"));
+    const q = query(collection(db, "users"), where("role", "==", "student"));
     const unsub = onSnapshot(q, (snap) => {
-      setLecturers(snap.docs.map((d) => ({ uid: d.id, ...(d.data() as Omit<AppUser, "uid">) })));
+      setStudents(
+        snap.docs
+          .map((d) => ({ uid: d.id, ...(d.data() as Omit<AppUser, "uid">) }))
+          .sort((a, b) => a.displayName.localeCompare(b.displayName))
+      );
       setLoading(false);
     });
     return unsub;
@@ -37,18 +41,18 @@ export default function AdminLecturersPage() {
       const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create_lecturer", name, email }),
+        body: JSON.stringify({ action: "create_student", name, email }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message ?? "Failed");
 
-      toast.success("Lecturer account created.");
+      toast.success("Student account created.");
       setNewCredential({ email, tempPassword: data.tempPassword });
       setName("");
       setEmail("");
       setShowForm(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create the lecturer account.");
+      toast.error(err instanceof Error ? err.message : "Couldn't create the student account.");
     } finally {
       setSubmitting(false);
     }
@@ -58,11 +62,13 @@ export default function AdminLecturersPage() {
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-text-primary">Lecturers</h1>
-          <p className="mt-1 text-sm text-text-secondary">Provision lecturer accounts — there&apos;s no public signup.</p>
+          <h1 className="font-display text-2xl font-semibold text-text-primary">Students</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Create student accounts here, then enroll them into a course from the Courses page.
+          </p>
         </div>
         <Button onClick={() => setShowForm((v) => !v)} className="gap-2">
-          <UserPlus className="h-4 w-4" /> New lecturer
+          <UserPlus className="h-4 w-4" /> New student
         </Button>
       </div>
 
@@ -90,25 +96,32 @@ export default function AdminLecturersPage() {
 
       <Card className="mt-6 p-0 overflow-hidden">
         <div className="border-b border-border p-6">
-          <CardTitle>Lecturer accounts ({lecturers.length})</CardTitle>
+          <CardTitle>Student accounts ({students.length})</CardTitle>
         </div>
         {loading ? (
           <div className="p-8">
-            <Spinner label="Loading lecturers…" />
+            <Spinner label="Loading students…" />
           </div>
-        ) : lecturers.length === 0 ? (
-          <p className="p-8 text-center text-sm text-text-secondary">No lecturer accounts yet.</p>
+        ) : students.length === 0 ? (
+          <p className="p-8 text-center text-sm text-text-secondary">No student accounts yet.</p>
         ) : (
           <div>
-            {lecturers.map((l) => (
-              <div key={l.uid} className="flex items-center gap-4 border-b border-border px-6 py-4 last:border-b-0">
+            {students.map((s) => (
+              <div key={s.uid} className="flex items-center gap-4 border-b border-border px-6 py-4 last:border-b-0">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Mail className="h-4.5 w-4.5" />
+                  <GraduationCap className="h-4.5 w-4.5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-text-primary">{l.displayName}</p>
-                  <p className="text-xs text-text-secondary">{l.email}</p>
+                  <p className="truncate text-sm font-medium text-text-primary">{s.displayName}</p>
+                  <p className="text-xs text-text-secondary">{s.email}</p>
                 </div>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                    s.faceDescriptor ? "bg-success/10 text-success" : "bg-slate-100 text-text-secondary"
+                  }`}
+                >
+                  {s.faceDescriptor ? "Face registered" : "Not registered"}
+                </span>
               </div>
             ))}
           </div>
