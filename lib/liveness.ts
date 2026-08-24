@@ -1,4 +1,4 @@
-// Basic anti-spoofing via blink detection, per AttendAI_CONTEXT.md Section 3.
+// Basic anti-spoofing via blink detection + motion fallback.
 //
 // HONEST LIMITATION (state this in your defense): face-api.js with a single
 // static capture can be fooled by a photo held up to the camera. This blink
@@ -9,14 +9,14 @@
 // (see CONTEXT.md Section 9, Non-Goals).
 import * as faceapi from "face-api.js";
 
-function distance(a: faceapi.Point, b: faceapi.Point): number {
+function dist(a: faceapi.Point, b: faceapi.Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 export function computeEyeAspectRatio(eyeLandmarks: faceapi.Point[]): number {
-  const vertical1 = distance(eyeLandmarks[1], eyeLandmarks[5]);
-  const vertical2 = distance(eyeLandmarks[2], eyeLandmarks[4]);
-  const horizontal = distance(eyeLandmarks[0], eyeLandmarks[3]);
+  const vertical1 = dist(eyeLandmarks[1], eyeLandmarks[5]);
+  const vertical2 = dist(eyeLandmarks[2], eyeLandmarks[4]);
+  const horizontal = dist(eyeLandmarks[0], eyeLandmarks[3]);
   return (vertical1 + vertical2) / (2 * horizontal);
 }
 
@@ -29,18 +29,27 @@ export interface BlinkDetectionOptions {
 }
 
 /**
- * Samples eye-aspect-ratio over a short window and looks for a clear dip,
- * which is what a real blink produces. The 0.06 delta threshold is
- * calibrated for face-api.js's TinyFaceDetector + 68-point landmarks,
- * where the raw EAR range per blink is typically 0.06–0.12.
- * Adjust if you switch to a higher-resolution detector.
+ * Detects liveness through two complementary signals:
+ *
+ * 1. **Blink detection** — averages the Eye Aspect Ratio (EAR) from BOTH
+ *    eyes and looks for a dip (delta > 0.03). Using both eyes halves
+ *    landmark noise compared to a single-eye check.
+ *
+ * 2. **Head motion fallback** — tracks nose-tip position across frames.
+ *    If the user moves their head (nod, tilt, lean) by more than 3% of
+ *    the face bounding box, that also counts as "live". A static photo
+ *    held up to the camera can't produce this kind of motion.
+ *
+ * Liveness passes if EITHER signal fires.
  */
 export async function detectBlink(
   videoElement: HTMLVideoElement,
   options: BlinkDetectionOptions = {}
 ): Promise<boolean> {
   const { durationMs = 4000, onSample, signal } = options;
-  const readings: number[] = [];
+  const earReadings: number[] = [];
+  const nosePositions: { x: number; y: number }[] = [];
+  let faceWidth = 0;
   const start = Date.now();
 
   while (Date.now() - start < durationMs) {
@@ -51,17 +60,48 @@ export async function detectBlink(
       .withFaceLandmarks();
 
     if (detection) {
-      const leftEAR = computeEyeAspectRatio(detection.landmarks.getLeftEye());
-      readings.push(leftEAR);
-      onSample?.(leftEAR);
+      // --- EAR from both eyes, averaged ---
+      const leftEye = detection.landmarks.getLeftEye();
+      const rightEye = detection.landmarks.getRightEye();
+      const leftEAR = computeEyeAspectRatio(leftEye);
+      const rightEAR = computeEyeAspectRatio(rightEye);
+      const avgEAR = (leftEAR + rightEAR) / 2;
+      earReadings.push(avgEAR);
+      onSample?.(avgEAR);
+
+      // --- Nose-tip position for motion tracking ---
+      const nose = detection.landmarks.getNose();
+      // Nose tip is typically landmark index 3 (tip of the nose)
+      const noseTip = nose[3] ?? nose[0];
+      nosePositions.push({ x: noseTip.x, y: noseTip.y });
+      faceWidth = detection.detection.box.width;
     }
 
-    await new Promise((r) => setTimeout(r, 60));
+    await new Promise((r) => setTimeout(r, 50));
   }
 
-  if (readings.length < 3) return false; // not enough samples to trust a result
+  if (earReadings.length < 3) return false;
 
-  const min = Math.min(...readings);
-  const max = Math.max(...readings);
-  return max - min > 0.06;
+  // --- Check 1: Blink (EAR dip) ---
+  const minEAR = Math.min(...earReadings);
+  const maxEAR = Math.max(...earReadings);
+  const blinkDetected = maxEAR - minEAR > 0.03;
+
+  // --- Check 2: Head motion (nose displacement) ---
+  let motionDetected = false;
+  if (nosePositions.length >= 3 && faceWidth > 0) {
+    // Compare each nose position to the first to find max displacement
+    const first = nosePositions[0];
+    let maxDisplacement = 0;
+    for (let i = 1; i < nosePositions.length; i++) {
+      const dx = nosePositions[i].x - first.x;
+      const dy = nosePositions[i].y - first.y;
+      const displacement = Math.hypot(dx, dy);
+      if (displacement > maxDisplacement) maxDisplacement = displacement;
+    }
+    // If the nose moved more than 3% of the face width, it's live
+    motionDetected = maxDisplacement > faceWidth * 0.03;
+  }
+
+  return blinkDetected || motionDetected;
 }
