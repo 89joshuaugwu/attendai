@@ -1,4 +1,4 @@
-// Server-side attendance logic, per AttendAI_CONTEXT.md Section 4.
+// Server-side attendance logic, per docs/architecture.md.
 //
 // Architecture: client detects + computes descriptor, server decides.
 // The client NEVER gets to claim "this is student X" and NEVER writes

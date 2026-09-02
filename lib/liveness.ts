@@ -6,7 +6,7 @@
 // can't blink — but it does NOT defeat a determined attacker with a video
 // replay. It is a mitigation, not a guarantee. Full anti-spoofing needs
 // dedicated liveness hardware/models, which is explicitly out of scope
-// (see CONTEXT.md Section 9, Non-Goals).
+// (see docs/architecture.md, Important limitations).
 import * as faceapi from "face-api.js";
 
 function dist(a: faceapi.Point, b: faceapi.Point): number {

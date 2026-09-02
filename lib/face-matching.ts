@@ -1,8 +1,8 @@
-// One-to-many face matching, per AttendAI_CONTEXT.md Section 2.
+// One-to-many face matching, per docs/architecture.md.
 //
 // IMPORTANT — calibration is not optional. The 0.45 / 0.6 thresholds below
 // are starting points from common face-api.js usage, not verified numbers.
-// Phase 2 of PROMPT.md requires running identifyFace() against your own
+// Calibration requires running identifyFace() against your own
 // registered test roster (several real people, plus one unregistered face)
 // and adjusting these until "high" consistently means "actually them" and
 // an unregistered face reliably returns "none". Do not ship the defaults
@@ -43,7 +43,7 @@ export function identifyFace(
 }
 
 /**
- * Confidence tiers per DESIGN.md's ConfidenceBadge:
+ * Confidence tiers used by ConfidenceBadge:
  *  - high   (< 0.45): auto-mark present, no human in the loop
  *  - medium (< 0.6):  lecturer must confirm before it's recorded
  *  - none   (>= 0.6): not recognized, offer manual entry

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleIdentify } from "@/lib/attendance";
 
-// CRITICAL per CONTEXT.md Section 4: this route receives ONLY a raw
+// This route receives ONLY a raw
 // descriptor + a livenessVerified flag — never a claimed identity. The
 // actual FaceMatcher comparison against the enrolled roster happens here,
 // server-side, using firebase-admin. This is the ONLY code path that can

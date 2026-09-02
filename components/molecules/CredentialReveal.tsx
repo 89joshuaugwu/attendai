@@ -12,7 +12,7 @@ interface CredentialRevealProps {
 
 /**
  * Shown once, right after an admin creates a lecturer/student account.
- * There's no SMTP wired up yet (see README "Known gaps"), so the temp
+ * There's no SMTP wired up yet (see docs/security.md), so the temp
  * password only ever exists here — copy it and relay it to the person
  * yourself (WhatsApp, in person, etc). It won't be shown again after
  * this panel is dismissed; if lost, the admin has to reset it in the

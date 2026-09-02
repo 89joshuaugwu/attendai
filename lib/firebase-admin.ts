@@ -1,7 +1,7 @@
 // Firebase Admin SDK — server-only. Import this ONLY inside API routes / server
 // code. It has full read/write access and bypasses Firestore security rules,
 // which is exactly why identification + attendance writes are funneled through
-// server routes instead of trusting the client (see CONTEXT.md Section 4 & 7).
+// server routes instead of trusting the client (see docs/architecture.md).
 import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getAuth, type Auth } from "firebase-admin/auth";
