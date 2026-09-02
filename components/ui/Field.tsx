@@ -41,8 +41,8 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "h-11 rounded-[var(--radius-control)] border border-border bg-white px-3.5 text-sm text-text-primary",
-            "placeholder:text-text-secondary focus-visible:border-accent",
+            "h-11 rounded-[var(--radius-control)] border border-border bg-white px-3.5 text-sm text-text-primary shadow-sm transition-[border-color,box-shadow]",
+            "placeholder:text-text-secondary focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_rgba(6,182,212,0.12)]",
             error && "border-error",
             className
           )}
@@ -70,8 +70,8 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           ref={ref}
           id={selectId}
           className={cn(
-            "h-11 rounded-[var(--radius-control)] border border-border bg-white px-3.5 text-sm text-text-primary",
-            "focus-visible:border-accent",
+            "h-11 rounded-[var(--radius-control)] border border-border bg-white px-3.5 text-sm text-text-primary shadow-sm transition-[border-color,box-shadow]",
+            "focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_rgba(6,182,212,0.12)]",
             error && "border-error",
             className
           )}
