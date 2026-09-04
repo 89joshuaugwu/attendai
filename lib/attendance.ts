@@ -65,6 +65,17 @@ export async function markAttendance(
   method: "recognized" | "manual_override" = "recognized",
   confirmedBy: string | null = null
 ): Promise<void> {
+  const sessionSnap = await adminDb.collection("attendanceSessions").doc(sessionId).get();
+  if (!sessionSnap.exists) throw new Error("Session not found");
+  const session = sessionSnap.data() as { courseId: string };
+  const courseSnap = await adminDb.collection("courses").doc(session.courseId).get();
+  const enrolledStudentIds = (courseSnap.data() as { enrolledStudentIds?: string[] } | undefined)?.enrolledStudentIds ?? [];
+  if (!enrolledStudentIds.includes(uid)) throw new Error("Student is not enrolled in this course");
+
+  const studentSnap = await adminDb.collection("users").doc(uid).get();
+  if (!studentSnap.exists || studentSnap.data()?.role !== "student") throw new Error("Student not found");
+  const studentName = (studentSnap.data()?.displayName as string | undefined) ?? "Unnamed student";
+
   const recordRef = adminDb
     .collection("attendanceSessions")
     .doc(sessionId)
@@ -74,6 +85,7 @@ export async function markAttendance(
   await recordRef.set(
     {
       studentUid: uid, // duplicated from the doc ID so collectionGroup
+      studentName,
       // queries can filter on it directly — Firestore rules can't validate
       // an unfiltered list query against a per-document condition like
       // "doc ID == request.auth.uid"; it needs a matching `where` clause

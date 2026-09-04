@@ -12,6 +12,7 @@ import { LivenessPrompt } from "@/components/molecules/LivenessPrompt";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import type { IdentifyResponse } from "@/types";
+import { useAuth } from "@/lib/auth-context";
 
 type FlowState =
   | "loading"
@@ -36,6 +37,7 @@ interface LiveCaptureInterfaceProps {
 const RESET_DELAY_MS = 2000;
 
 export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureInterfaceProps) {
+  const { firebaseUser } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pausedRef = useRef(false);
@@ -108,9 +110,10 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
     async (descriptor: Float32Array) => {
       setFlow("identifying");
       try {
+        if (!firebaseUser) throw new Error("Not signed in");
         const res = await fetch(`/api/attendance/${sessionId}/identify`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${await firebaseUser.getIdToken()}` },
           body: JSON.stringify({ descriptor: Array.from(descriptor), livenessVerified: true }),
         });
         const data: IdentifyResponse = await res.json();
@@ -130,15 +133,16 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
         resetForNext();
       }
     },
-    [sessionId, resetForNext]
+    [sessionId, resetForNext, firebaseUser]
   );
 
   const handleConfirm = async () => {
     if (!result?.uid) return;
     try {
+      if (!firebaseUser) throw new Error("Not signed in");
       const res = await fetch(`/api/attendance/${sessionId}/manual`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await firebaseUser.getIdToken()}` },
         body: JSON.stringify({ uid: result.uid, distance: result.distance, confirmed: true }),
       });
       if (!res.ok) throw new Error();

@@ -45,6 +45,12 @@ export interface AttendanceRecord {
   confirmedBy: string | null;
 }
 
+export interface RosterStudent {
+  uid: string;
+  displayName: string;
+  email: string;
+}
+
 export type ConfidenceTier = "high" | "medium" | "none";
 
 export interface IdentifyResponse {

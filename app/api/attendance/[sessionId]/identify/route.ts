@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleIdentify } from "@/lib/attendance";
+import { canManageAttendance } from "@/lib/attendance-authorization";
 
 // This route receives ONLY a raw
 // descriptor + a livenessVerified flag — never a claimed identity. The
@@ -11,6 +12,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ses
   const { sessionId } = await params;
 
   try {
+    if (!(await canManageAttendance(req, sessionId))) {
+      return NextResponse.json({ status: "error", message: "You are not allowed to use this session." }, { status: 403 });
+    }
     const body = await req.json();
     const { descriptor, livenessVerified } = body as { descriptor: number[]; livenessVerified: boolean };
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { markAttendance } from "@/lib/attendance";
+import { canManageAttendance } from "@/lib/attendance-authorization";
 
 // Lecturer-only manual override endpoint, per CONTEXT.md Section 4/6. Used
 // for: (a) confirming a medium-confidence match flagged by /identify, or
@@ -15,6 +16,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ses
   const { sessionId } = await params;
 
   try {
+    if (!(await canManageAttendance(req, sessionId))) {
+      return NextResponse.json({ message: "You are not allowed to update this session." }, { status: 403 });
+    }
     const body = await req.json();
     const { uid, distance, confirmed, confirmedBy } = body as {
       uid: string;

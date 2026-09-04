@@ -51,7 +51,7 @@ export default function SessionRecordsPage({ params }: { params: Promise<{ id: s
       </div>
 
       <div className="mt-6">
-        <AttendanceRecordsView sessionId={sessionId} />
+        <AttendanceRecordsView sessionId={sessionId} enrolledStudentIds={course?.enrolledStudentIds ?? []} />
       </div>
     </div>
   );

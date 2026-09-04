@@ -13,14 +13,14 @@ export function AttendanceRow({ record, onRemove }: AttendanceRowProps) {
   const isManual = record.method === "manual_override";
 
   return (
-    <div className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-b-0">
+    <div className="flex items-center gap-4 border-b border-border px-6 py-4 last:border-b-0">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
         {isManual ? <UserCog className="h-4.5 w-4.5" /> : <ScanFace className="h-4.5 w-4.5" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-text-primary">{record.studentName ?? record.uid}</p>
+        <p className="truncate text-sm font-semibold text-text-primary">{record.studentName ?? "Student record"}</p>
         <p className="text-xs text-text-secondary">
-          Marked {formatTime(record.markedAt)}
+          {isManual ? "Added manually" : "Recognized"} {formatTime(record.markedAt)}
           {isManual ? " · Manual override" : record.confidence !== null ? ` · ${distanceToPercent(record.confidence)}% match` : ""}
         </p>
       </div>
