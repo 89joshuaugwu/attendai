@@ -3,19 +3,23 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";
-import { UserPlus, GraduationCap } from "lucide-react";
+import { UserPlus, GraduationCap, FileUp } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 import type { AppUser } from "@/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
 import { CredentialReveal } from "@/components/molecules/CredentialReveal";
+import { BulkStudentImport } from "@/components/organisms/BulkStudentImport";
 
 export default function AdminStudentsPage() {
+  const { firebaseUser } = useAuth();
   const [students, setStudents] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +44,7 @@ export default function AdminStudentsPage() {
     try {
       const res = await fetch("/api/auth/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await firebaseUser?.getIdToken()}` },
         body: JSON.stringify({ action: "create_student", name, email }),
       });
       const data = await res.json().catch(() => ({}));
@@ -67,9 +71,7 @@ export default function AdminStudentsPage() {
             Create student accounts here, then enroll them into a course from the Courses page.
           </p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)} className="gap-2">
-          <UserPlus className="h-4 w-4" /> New student
-        </Button>
+        <div className="flex gap-2"><Button variant="outline" onClick={() => setShowImport((v) => !v)} className="gap-2"><FileUp className="h-4 w-4" /> Import CSV</Button><Button onClick={() => setShowForm((v) => !v)} className="gap-2"><UserPlus className="h-4 w-4" /> New student</Button></div>
       </div>
 
       {newCredential && (
@@ -93,6 +95,8 @@ export default function AdminStudentsPage() {
           </form>
         </Card>
       )}
+
+      {showImport && <BulkStudentImport onClose={() => setShowImport(false)} />}
 
       <Card className="mt-6 p-0 overflow-hidden">
         <div className="border-b border-border p-6">

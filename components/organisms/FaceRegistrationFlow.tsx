@@ -24,6 +24,7 @@ export function FaceRegistrationFlow() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [step, setStep] = useState<Step>("loading-models");
+  const [isReregistering, setIsReregistering] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [capturedDescriptor, setCapturedDescriptor] = useState<Float32Array | null>(null);
 
@@ -119,7 +120,7 @@ export function FaceRegistrationFlow() {
     );
   }
 
-  if (step === "done" || (alreadyRegistered && step === "camera-permission")) {
+  if (step === "done" || (alreadyRegistered && step === "camera-permission" && !isReregistering)) {
     return (
       <Card className="flex flex-col items-center gap-3 py-10 text-center">
         <CheckCircle2 className="h-12 w-12 text-success" />
@@ -127,7 +128,7 @@ export function FaceRegistrationFlow() {
         <p className="max-w-sm text-sm text-text-secondary">
           You&apos;re all set for facial recognition attendance. Re-register below if your appearance has changed significantly.
         </p>
-        <Button variant="outline" onClick={() => { setStep("camera-permission"); }}>
+        <Button variant="outline" onClick={() => { setIsReregistering(true); setStep("camera-permission"); }}>
           Re-register face
         </Button>
       </Card>
@@ -149,7 +150,7 @@ export function FaceRegistrationFlow() {
         <div>
           <h3 className="font-display text-lg font-semibold text-text-primary">Enable your camera</h3>
           <p className="mt-1 max-w-sm text-sm text-text-secondary">
-            We&apos;ll capture one snapshot of your face to enroll you for recognition-based attendance. This never leaves your account.
+            We&apos;ll capture one snapshot to enroll you for recognition-based attendance and store its recognition data securely with your account.
           </p>
         </div>
         <Button onClick={startCamera}>Enable camera</Button>

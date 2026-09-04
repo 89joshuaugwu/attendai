@@ -245,7 +245,7 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
         <p className="max-w-sm text-sm text-slate-200">
           Camera access was denied or unavailable. Enable camera permission, or use manual entry below.
         </p>
-        <Button onClick={onManualEntry} variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10">
+        <Button onClick={onManualEntry} variant="outline" className="gap-2 border-white/20 bg-transparent text-white hover:bg-white/10">
           <UserPlus className="h-4 w-4" /> Use manual entry
         </Button>
       </div>
@@ -279,7 +279,7 @@ export function LiveCaptureInterface({ sessionId, onManualEntry }: LiveCaptureIn
             variant="outline"
             size="sm"
             onClick={() => setPaused((p) => !p)}
-            className="gap-2 border-white/20 text-white hover:bg-white/10"
+            className="gap-2 border-white/20 bg-transparent text-white hover:bg-white/10"
           >
             {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             {paused ? "Resume" : "Pause"}

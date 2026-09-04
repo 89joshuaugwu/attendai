@@ -5,6 +5,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { UserPlus, Mail } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 import type { AppUser } from "@/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +14,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { CredentialReveal } from "@/components/molecules/CredentialReveal";
 
 export default function AdminLecturersPage() {
+  const { firebaseUser } = useAuth();
   const [lecturers, setLecturers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -36,7 +38,7 @@ export default function AdminLecturersPage() {
     try {
       const res = await fetch("/api/auth/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await firebaseUser?.getIdToken()}` },
         body: JSON.stringify({ action: "create_lecturer", name, email }),
       });
       const data = await res.json().catch(() => ({}));

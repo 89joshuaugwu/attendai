@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import type { Role } from "@/types";
+import { randomBytes } from "crypto";
 
 // Server-only admin actions: creates lecturer/student accounts (no public
 // signup — see CONTEXT.md Section 5-6) and courses using firebase-admin,
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest) {
   const { action } = body;
 
   try {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json({ message: "Only administrators can manage accounts." }, { status: 403 });
+    }
     if (action === "create_lecturer" || action === "create_student") {
       const role: Role = action === "create_lecturer" ? "lecturer" : "student";
       const { name, email } = body as { name: string; email: string };
@@ -41,6 +45,32 @@ export async function POST(req: NextRequest) {
       // admin to relay manually (WhatsApp, in person, etc). Wire up
       // Nodemailer/Gmail SMTP before onboarding at real scale.
       return NextResponse.json({ uid: userRecord.uid, tempPassword });
+    }
+
+    if (action === "bulk_create_students") {
+      const students = body.students as Array<{ name?: string; email?: string }>;
+      if (!Array.isArray(students) || students.length === 0 || students.length > 100) {
+        return NextResponse.json({ message: "Upload between 1 and 100 students at a time." }, { status: 400 });
+      }
+
+      const results = await Promise.all(students.map(async ({ name, email }) => {
+        const cleanName = name?.trim();
+        const cleanEmail = email?.trim().toLowerCase();
+        if (!cleanName || !cleanEmail) return { name: cleanName ?? "", email: cleanEmail ?? "", error: "Name and email are required." };
+        try {
+          const userRecord = await adminAuth.createUser({ email: cleanEmail, password: generateTempPassword(), displayName: cleanName });
+          await adminDb.collection("users").doc(userRecord.uid).set({
+            uid: userRecord.uid, email: cleanEmail, displayName: cleanName, role: "student",
+            faceDescriptor: null, activationStatus: "pending", createdAt: Date.now(),
+          });
+          const activationLink = await adminAuth.generatePasswordResetLink(cleanEmail);
+          return { name: cleanName, email: cleanEmail, activationLink };
+        } catch (error: unknown) {
+          const code = (error as { code?: string }).code;
+          return { name: cleanName, email: cleanEmail, error: code === "auth/email-already-exists" ? "Email is already registered." : "Could not create account." };
+        }
+      }));
+      return NextResponse.json({ results });
     }
 
     if (action === "create_course") {
@@ -72,5 +102,17 @@ export async function POST(req: NextRequest) {
 }
 
 function generateTempPassword(): string {
-  return Math.random().toString(36).slice(-8) + "Aa1!";
+  return `${randomBytes(12).toString("base64url")}Aa1!`;
+}
+
+async function isAdmin(req: NextRequest): Promise<boolean> {
+  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!token) return false;
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    const profile = await adminDb.collection("users").doc(decoded.uid).get();
+    return profile.data()?.role === "admin";
+  } catch {
+    return false;
+  }
 }

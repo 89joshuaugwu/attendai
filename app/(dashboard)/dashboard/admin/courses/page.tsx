@@ -5,6 +5,7 @@ import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/f
 import toast from "react-hot-toast";
 import { Plus, BookOpen, Users } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 import type { AppUser, Course } from "@/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +13,7 @@ import { SelectField, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
 
 export default function AdminCoursesPage() {
+  const { firebaseUser } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [lecturers, setLecturers] = useState<AppUser[]>([]);
   const [students, setStudents] = useState<AppUser[]>([]);
@@ -53,7 +55,7 @@ export default function AdminCoursesPage() {
     try {
       const res = await fetch("/api/auth/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await firebaseUser?.getIdToken()}` },
         body: JSON.stringify({ action: "create_course", name, code, lecturerId }),
       });
       if (!res.ok) throw new Error();
