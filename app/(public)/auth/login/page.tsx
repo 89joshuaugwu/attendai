@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import toast from "react-hot-toast";
@@ -65,6 +66,7 @@ export default function LoginPage() {
             <Button type="submit" loading={loading} className="mt-2 w-full">
               Sign in
             </Button>
+            <Link href="/auth/activate" className="text-center text-sm font-medium text-primary hover:underline">Activate your student account</Link>
           </form>
         </Card>
       </div>

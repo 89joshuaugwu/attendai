@@ -19,9 +19,15 @@ export async function POST(req: NextRequest) {
     }
     if (action === "create_lecturer" || action === "create_student") {
       const role: Role = action === "create_lecturer" ? "lecturer" : "student";
-      const { name, email } = body as { name: string; email: string };
-      if (!name || !email) {
-        return NextResponse.json({ message: "Name and email are required." }, { status: 400 });
+      const { name, email, registrationNumber } = body as { name: string; email: string; registrationNumber?: string };
+      if (!name || !email || (role === "student" && !registrationNumber?.trim())) {
+        return NextResponse.json({ message: role === "student" ? "Name, email, and registration number are required." : "Name and email are required." }, { status: 400 });
+      }
+
+      const cleanRegistrationNumber = registrationNumber?.trim();
+      if (role === "student" && cleanRegistrationNumber) {
+        const existing = await adminDb.collection("users").where("registrationNumber", "==", cleanRegistrationNumber).limit(1).get();
+        if (!existing.empty) return NextResponse.json({ message: "That registration number is already registered." }, { status: 409 });
       }
 
       const tempPassword = generateTempPassword();
@@ -36,6 +42,7 @@ export async function POST(req: NextRequest) {
         email,
         displayName: name,
         role,
+        ...(role === "student" ? { registrationNumber: cleanRegistrationNumber } : {}),
         faceDescriptor: null,
         createdAt: Date.now(),
       });
@@ -48,23 +55,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "bulk_create_students") {
-      const students = body.students as Array<{ name?: string; email?: string }>;
+      const students = body.students as Array<{ name?: string; email?: string; registrationNumber?: string }>;
       if (!Array.isArray(students) || students.length === 0 || students.length > 100) {
         return NextResponse.json({ message: "Upload between 1 and 100 students at a time." }, { status: 400 });
       }
 
-      const results = await Promise.all(students.map(async ({ name, email }) => {
-        const cleanName = name?.trim();
+      const seenRegistrationNumbers = new Set<string>();
+      const results = await Promise.all(students.map(async ({ name, email, registrationNumber }) => {
+        const cleanRegistrationNumber = registrationNumber?.trim();
+        const cleanName = name?.trim() || cleanRegistrationNumber;
         const cleanEmail = email?.trim().toLowerCase();
-        if (!cleanName || !cleanEmail) return { name: cleanName ?? "", email: cleanEmail ?? "", error: "Name and email are required." };
+        if (!cleanName || !cleanEmail || !cleanRegistrationNumber) return { name: cleanName ?? "", email: cleanEmail ?? "", registrationNumber: cleanRegistrationNumber ?? "", error: "Registration number and email are required." };
+        if (seenRegistrationNumbers.has(cleanRegistrationNumber)) return { name: cleanName, email: cleanEmail, registrationNumber: cleanRegistrationNumber, error: "Registration number is duplicated in this CSV." };
+        seenRegistrationNumbers.add(cleanRegistrationNumber);
         try {
+          const existing = await adminDb.collection("users").where("registrationNumber", "==", cleanRegistrationNumber).limit(1).get();
+          if (!existing.empty) return { name: cleanName, email: cleanEmail, registrationNumber: cleanRegistrationNumber, error: "Registration number is already registered." };
           const userRecord = await adminAuth.createUser({ email: cleanEmail, password: generateTempPassword(), displayName: cleanName });
           await adminDb.collection("users").doc(userRecord.uid).set({
             uid: userRecord.uid, email: cleanEmail, displayName: cleanName, role: "student",
-            faceDescriptor: null, activationStatus: "pending", createdAt: Date.now(),
+            registrationNumber: cleanRegistrationNumber, faceDescriptor: null, activationStatus: "pending", createdAt: Date.now(),
           });
-          const activationLink = await adminAuth.generatePasswordResetLink(cleanEmail);
-          return { name: cleanName, email: cleanEmail, activationLink };
+          return { name: cleanName, email: cleanEmail, registrationNumber: cleanRegistrationNumber };
         } catch (error: unknown) {
           const code = (error as { code?: string }).code;
           return { name: cleanName, email: cleanEmail, error: code === "auth/email-already-exists" ? "Email is already registered." : "Could not create account." };

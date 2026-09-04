@@ -4,6 +4,7 @@ export interface AppUser {
   uid: string;
   email: string;
   displayName: string;
+  registrationNumber?: string;
   role: Role;
   faceDescriptor: number[] | null;
   createdAt?: number;
@@ -49,6 +50,7 @@ export interface RosterStudent {
   uid: string;
   displayName: string;
   email: string;
+  registrationNumber?: string;
 }
 
 export type ConfidenceTier = "high" | "medium" | "none";

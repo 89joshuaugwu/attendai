@@ -22,6 +22,7 @@ export default function AdminStudentsPage() {
   const [showImport, setShowImport] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [newCredential, setNewCredential] = useState<{ email: string; tempPassword: string } | null>(null);
 
@@ -45,7 +46,7 @@ export default function AdminStudentsPage() {
       const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${await firebaseUser?.getIdToken()}` },
-        body: JSON.stringify({ action: "create_student", name, email }),
+        body: JSON.stringify({ action: "create_student", name, email, registrationNumber }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message ?? "Failed");
@@ -54,6 +55,7 @@ export default function AdminStudentsPage() {
       setNewCredential({ email, tempPassword: data.tempPassword });
       setName("");
       setEmail("");
+      setRegistrationNumber("");
       setShowForm(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create the student account.");
@@ -88,6 +90,7 @@ export default function AdminStudentsPage() {
         <Card className="mt-6">
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
             <TextField label="Full name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <TextField label="Registration number" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} required />
             <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <Button type="submit" loading={submitting} className="mt-2">
               Create account
@@ -117,7 +120,7 @@ export default function AdminStudentsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-text-primary">{s.displayName}</p>
-                  <p className="text-xs text-text-secondary">{s.email}</p>
+                  <p className="text-xs text-text-secondary">{s.registrationNumber ? `${s.registrationNumber} · ` : ""}{s.email}</p>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
